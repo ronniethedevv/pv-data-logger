@@ -1,0 +1,36 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  /* tabular figures everywhere numbers appear */
+  font-feature-settings: "tnum" 1;
+}
+
+body {
+  @apply bg-white text-slate-900 antialiased;
+}
+
+/* 200ms fade replayed whenever a metric value re-mounts (keyed on its value) */
+@keyframes value-fade {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.value-fade {
+  animation: value-fade 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .value-fade {
+    animation: none;
+  }
+}

@@ -60,7 +60,7 @@ export default function SystemPage() {
             <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               <MetricCard label="Data Points Today" value={pointsToday} unit="logged" precision={0} />
               <MetricCard
-                label="Logging Interval"
+                label="Refresh Interval"
                 value={POLL_INTERVAL_MS / 1000}
                 unit="s"
                 precision={0}

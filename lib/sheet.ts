@@ -60,9 +60,27 @@ async function fetchRows(): Promise<string[][]> {
   return parseCsv(await res.text());
 }
 
-/** Fetch and map the sheet to chronologically-sorted readings. */
+// Server-side cache. The sheet only changes every ~10 min, so we read Google at
+// most once per window no matter how many viewers are polling — this decouples
+// Google/quota usage from the number of open tabs and keeps it comfortably free.
+const CACHE_MS = Number(process.env.SHEET_CACHE_MS ?? 60_000);
+let cache: { at: number; readings: LiveReading[] } | null = null;
+
+/** Fetch and map the sheet to chronologically-sorted readings (cached). */
 export async function fetchSheetReadings(): Promise<LiveReading[]> {
-  return rowsToReadings(await fetchRows());
+  const now = Date.now();
+  if (cache && now - cache.at < CACHE_MS) return cache.readings;
+
+  try {
+    const readings = rowsToReadings(await fetchRows());
+    cache = { at: now, readings };
+    return readings;
+  } catch (e) {
+    // Ride out a transient blip on the last good data rather than flapping to an
+    // error; a first-ever failure (no cache yet) still surfaces for diagnosis.
+    if (cache) return cache.readings;
+    throw e;
+  }
 }
 
 /** Parse CSV text into rows of cells, honoring quoted fields. */

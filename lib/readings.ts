@@ -11,7 +11,10 @@
 import { useEffect, useState } from "react";
 import type { HistoricalReading, LiveReading } from "@/types/readings";
 
-export const POLL_INTERVAL_MS = 5000; // re-read the sheet every 5 s
+// The logger writes every ~10 min, so polling fast buys nothing. 30 s keeps the
+// UI feeling live while staying light on Vercel invocations and Sheets quota
+// (the server also caches — see lib/sheet.ts).
+export const POLL_INTERVAL_MS = 30_000;
 
 export type ConnectionStatus = "connected" | "offline";
 

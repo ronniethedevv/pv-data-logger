@@ -21,8 +21,18 @@ const SHEET_ID = process.env.SHEET_ID ?? "1k00TxA9Z1YWQsqbopmQAeSCsULbM4bc05_caF
 const SHEET_GID = process.env.SHEET_GID ?? "0";
 const PANEL_AREA_M2 = 0.06; // 6 W panel — used to derive efficiency
 
-/** URL of the sheet's CSV export for the configured tab. */
+/**
+ * CSV endpoint for the sheet.
+ *
+ * The `gviz` URL (built from SHEET_ID/SHEET_GID) works from a normal machine but
+ * Google returns 404 for it when the request comes from a datacenter IP — so on
+ * Vercel and other hosts it fails. Set `SHEET_CSV_URL` to the sheet's
+ * "Publish to web" CSV link (File → Share → Publish to web → CSV), which Google
+ * serves anonymously from anywhere, and it takes precedence.
+ */
 export function sheetCsvUrl(): string {
+  const published = process.env.SHEET_CSV_URL?.trim();
+  if (published) return published;
   return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${SHEET_GID}`;
 }
 

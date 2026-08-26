@@ -40,8 +40,13 @@ export function useReadings(): ReadingsState {
     async function poll() {
       try {
         const res = await fetch("/api/readings", { cache: "no-store" });
-        if (!res.ok) throw new Error(`Data source responded ${res.status}`);
-        const { readings } = (await res.json()) as { readings: HistoricalReading[] };
+        const body = (await res.json().catch(() => null)) as
+          | { readings?: HistoricalReading[]; error?: string }
+          | null;
+        if (!res.ok) {
+          throw new Error(body?.error || `Data source responded ${res.status}`);
+        }
+        const readings = body?.readings ?? [];
         if (cancelled) return;
 
         const live = readings.length ? readings[readings.length - 1] : null;

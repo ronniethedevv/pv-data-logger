@@ -45,6 +45,17 @@ Set the sheet via env (copy `.env.example` to `.env.local`): `SHEET_ID` and
 `SHEET_GID` (the tab's `gid`). The sheet must be shared as *Anyone with the link
 can view*. Without these, it falls back to the project's default sheet.
 
+### Deploying (Vercel etc.)
+
+Google serves the `gviz` link fine from a laptop but returns **404 to requests
+from datacenter IPs**, so a deployed host fails with `Sheet responded 404`. Fix:
+publish the sheet (**File → Share → Publish to web → pick the tab → CSV**) and
+set the resulting link as **`SHEET_CSV_URL`** — it takes precedence over the
+gviz fallback and Google serves it anonymously from anywhere. Also set **`TZ`**
+(e.g. `Africa/Lagos`) so the sheet's local `DATE`/`TIME` parse correctly on a
+UTC host. (Published-to-web data can lag the sheet by a few minutes — fine for a
+10-minute logging cadence.)
+
 ## Data model
 
 The canonical reading shape lives in

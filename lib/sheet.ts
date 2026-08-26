@@ -61,11 +61,24 @@ async function fetchRows(): Promise<string[][]> {
     return (data.values ?? []).map((row) => row.map((c) => (c == null ? "" : String(c))));
   }
 
-  const res = await fetch(csvUrl(), { cache: "no-store" });
+  const url = csvUrl();
+  const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) {
     throw new Error(`Sheet responded ${res.status}`);
   }
-  return parseCsv(await res.text());
+
+  const text = await res.text();
+  // A sheet's /edit URL returns the HTML editor with HTTP 200, which would
+  // otherwise parse as gibberish CSV and silently yield zero readings.
+  const contentType = res.headers.get("content-type") ?? "";
+  if (contentType.includes("text/html") || /^\s*<(!doctype|html)/i.test(text)) {
+    throw new Error(
+      "Data source returned a web page, not CSV — SHEET_CSV_URL must be the " +
+        "File > Share > Publish to web CSV link (ending in output=csv), not the /edit URL"
+    );
+  }
+
+  return parseCsv(text);
 }
 
 // Server-side cache. The sheet only changes every ~10 min, so we read Google at
@@ -80,7 +93,19 @@ export async function fetchSheetReadings(): Promise<LiveReading[]> {
   if (cache && now - cache.at < CACHE_MS) return cache.readings;
 
   try {
-    const readings = rowsToReadings(await fetchRows());
+    const rows = await fetchRows();
+    const readings = rowsToReadings(rows);
+
+    // Rows came back but none parsed — almost always an unexpected DATE/TIME
+    // format or renamed headers. Fail loudly rather than returning an empty
+    // array, which the UI cannot distinguish from "still loading".
+    if (readings.length === 0 && rows.length > 1) {
+      const sample = [rows[1]?.[0], rows[1]?.[1]].filter(Boolean).join(" ");
+      throw new Error(
+        `Fetched ${rows.length} rows but parsed 0 readings — check DATE/TIME columns (sample: "${sample}")`
+      );
+    }
+
     cache = { at: now, readings };
     return readings;
   } catch (e) {
@@ -154,10 +179,49 @@ function round(v: number, dp: number): number {
  * Returns null when neither yields a valid date.
  */
 function parseTimestamp(date: string, time: string, fallbackDate: string): number | null {
-  const d = date || fallbackDate;
-  if (!d || !time) return null;
-  const ms = new Date(`${d}T${time}${TZ_OFFSET}`).getTime();
+  const d = (date || fallbackDate).trim();
+  const t = time.trim();
+  if (!d || !t) return null;
+
+  const iso = toIsoDate(d);
+  if (!iso) return null;
+
+  const ms = new Date(`${iso}T${padTime(t)}${TZ_OFFSET}`).getTime();
   return Number.isFinite(ms) ? ms : null;
+}
+
+/**
+ * Normalize a sheet date cell to `YYYY-MM-DD`.
+ *
+ * The CSV export gives ISO, but the Sheets API returns the cell's *display*
+ * format, which is commonly `M/D/YYYY` (US locale) or `D/M/YYYY`. Slash dates
+ * are read as month-first unless the first field is clearly a day (> 12).
+ */
+function toIsoDate(d: string): string | null {
+  const isoMatch = d.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (isoMatch) {
+    const [, y, m, day] = isoMatch;
+    return `${y}-${m.padStart(2, "0")}-${day.padStart(2, "0")}`;
+  }
+
+  const slash = d.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+  if (slash) {
+    const a = Number(slash[1]);
+    const b = Number(slash[2]);
+    const year = slash[3];
+    const [month, day] = a > 12 ? [b, a] : [a, b];
+    if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  }
+
+  return null;
+}
+
+/** `H:MM` / `H:MM:SS` → zero-padded `HH:MM:SS`. */
+function padTime(t: string): string {
+  const m = t.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/);
+  if (!m) return t;
+  return `${m[1].padStart(2, "0")}:${m[2]}:${m[3] ?? "00"}`;
 }
 
 /** Map a header row + data rows to chronologically-sorted readings. */

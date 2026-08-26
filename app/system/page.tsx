@@ -5,6 +5,7 @@ import { PageHeader } from "@/components/PageHeader";
 import { StatusBadge } from "@/components/StatusBadge";
 import { MetricCard } from "@/components/MetricCard";
 import { SkeletonCard } from "@/components/SkeletonCard";
+import { EmptyState } from "@/components/EmptyState";
 import { ErrorAlert } from "@/components/ui/alert";
 import { formatClock } from "@/lib/utils";
 import { useReadings, POLL_INTERVAL_MS } from "@/lib/readings";
@@ -48,12 +49,17 @@ export default function SystemPage() {
           </p>
         </div>
 
-        {loading || !live ? (
+        {loading ? (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <SkeletonCard key={i} />
             ))}
           </div>
+        ) : !live ? (
+          <EmptyState
+            title="No readings available"
+            detail="The data source returned no rows, so sensor status cannot be determined."
+          />
         ) : (
           <div className="flex flex-col gap-6">
             {/* Logging summary */}

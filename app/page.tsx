@@ -8,6 +8,7 @@ import { ChartCard } from "@/components/ChartCard";
 import { RangeSelector } from "@/components/RangeSelector";
 import { TimeSeriesChart, type ChartPoint } from "@/components/TimeSeriesChart";
 import { SkeletonCard, SkeletonChart } from "@/components/SkeletonCard";
+import { EmptyState } from "@/components/EmptyState";
 import { ErrorAlert } from "@/components/ui/alert";
 import { useReadings, trendVsAverage } from "@/lib/readings";
 import { DEFAULT_RANGE_MS, rangeLabel, windowByRange } from "@/lib/ranges";
@@ -61,8 +62,13 @@ export default function DashboardPage() {
           </div>
         ) : null}
 
-        {loading || !live ? (
+        {loading ? (
           <LoadingState />
+        ) : !live ? (
+          <EmptyState
+            title="No readings available"
+            detail="The data source returned no rows. Check that the logger is writing to the sheet and that the data source is configured for this host."
+          />
         ) : (
           <div className="flex flex-col gap-6">
             {/* Row 1 — Electrical metrics */}

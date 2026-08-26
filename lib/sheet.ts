@@ -32,6 +32,14 @@ const API_KEY = process.env.SHEETS_API_KEY?.trim();
 const SHEET_RANGE = process.env.SHEET_RANGE?.trim() || "A:L";
 const PANEL_AREA_M2 = 0.06; // 6 W panel — used to derive efficiency
 
+// The sheet records DATE/TIME in the plant's local zone with no offset. On a UTC
+// host (Vercel) that would parse an hour or more off, and Vercel reserves `TZ`,
+// so set SHEET_TZ_OFFSET (e.g. "+01:00") to pin the zone. Empty = host-local.
+const TZ_OFFSET = (() => {
+  const raw = process.env.SHEET_TZ_OFFSET?.trim();
+  return raw && /^([+-]\d{2}:\d{2}|Z)$/.test(raw) ? raw : "";
+})();
+
 /** CSV endpoint: the published link if given, else the gviz export. */
 function csvUrl(): string {
   const published = process.env.SHEET_CSV_URL?.trim();
@@ -140,14 +148,15 @@ function round(v: number, dp: number): number {
 }
 
 /**
- * Turn a `DATE` + `TIME` pair into an epoch-ms timestamp in the server's local
- * time. `date` may be blank on some rows, in which case the caller's carried
- * `fallbackDate` is used. Returns null when neither yields a valid date.
+ * Turn a `DATE` + `TIME` pair into an epoch-ms timestamp, interpreting the naive
+ * time in `SHEET_TZ_OFFSET` (or the host's local zone if unset). `date` may be
+ * blank on some rows, in which case the caller's carried `fallbackDate` is used.
+ * Returns null when neither yields a valid date.
  */
 function parseTimestamp(date: string, time: string, fallbackDate: string): number | null {
   const d = date || fallbackDate;
   if (!d || !time) return null;
-  const ms = new Date(`${d}T${time}`).getTime();
+  const ms = new Date(`${d}T${time}${TZ_OFFSET}`).getTime();
   return Number.isFinite(ms) ? ms : null;
 }
 

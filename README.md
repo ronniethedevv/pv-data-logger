@@ -62,8 +62,9 @@ whichever fix fits:
   Google serves it anonymously from anywhere. Note it can lag the live sheet by
   a few minutes — fine for a 10-minute logging cadence.
 
-Also set **`TZ`** (e.g. `Africa/Lagos`) so the sheet's local `DATE`/`TIME` parse
-correctly on a UTC host.
+Also set **`SHEET_TZ_OFFSET`** (e.g. `+01:00`) so the sheet's local `DATE`/`TIME`
+parse correctly on a UTC host. (Vercel reserves `TZ`, so this app-level offset is
+used instead.)
 
 ## Data model
 

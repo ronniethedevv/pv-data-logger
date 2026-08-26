@@ -31,30 +31,39 @@ Open [http://localhost:3000](http://localhost:3000).
 
 The logger appends rows to a Google Sheet, which is the live database. The flow:
 
-- [`lib/sheet.ts`](lib/sheet.ts) reads the sheet's CSV export (the `gviz`
-  endpoint) and maps each row onto a `LiveReading` (columns are matched by
-  header name, so column order can change).
+- [`lib/sheet.ts`](lib/sheet.ts) reads the sheet and maps each row onto a
+  `LiveReading` (columns are matched by header name, so column order can change).
 - [`app/api/readings/route.ts`](app/api/readings/route.ts) fetches that
   server-side and returns JSON — this keeps Google out of the browser (no CORS)
-  and the source URL in one place.
+  and the source in one place.
 - **`useReadings()` in [`lib/readings.ts`](lib/readings.ts)** polls that route
   every 5 seconds. Components never fetch directly, so pointing at a different
   backend is a one-file change (swap the route) with no component edits.
 
-Set the sheet via env (copy `.env.example` to `.env.local`): `SHEET_ID` and
-`SHEET_GID` (the tab's `gid`). The sheet must be shared as *Anyone with the link
-can view*. Without these, it falls back to the project's default sheet.
+Copy `.env.example` to `.env.local`. For local dev, the default `SHEET_ID` /
+`SHEET_GID` gviz export just works (the sheet is *Anyone with the link can
+view*).
 
 ### Deploying (Vercel etc.)
 
 Google serves the `gviz` link fine from a laptop but returns **404 to requests
-from datacenter IPs**, so a deployed host fails with `Sheet responded 404`. Fix:
-publish the sheet (**File → Share → Publish to web → pick the tab → CSV**) and
-set the resulting link as **`SHEET_CSV_URL`** — it takes precedence over the
-gviz fallback and Google serves it anonymously from anywhere. Also set **`TZ`**
-(e.g. `Africa/Lagos`) so the sheet's local `DATE`/`TIME` parse correctly on a
-UTC host. (Published-to-web data can lag the sheet by a few minutes — fine for a
-10-minute logging cadence.)
+from datacenter IPs**, so a deployed host fails with `Sheet responded 404`. Pick
+whichever fix fits:
+
+- **`SHEETS_API_KEY` (recommended, no sheet ownership needed).** Reads the sheet
+  through the Google Sheets API, which works from any IP. Create a free key at
+  [console.cloud.google.com](https://console.cloud.google.com): new project →
+  **APIs & Services → Enable APIs → Google Sheets API** → **Credentials → Create
+  credentials → API key** (optionally restrict it to the Sheets API). The key
+  needs no access to the sheet — link-view is enough. Set `SHEETS_API_KEY`; set
+  `SHEET_RANGE` (default `A:L`) only if the data is on a non-first tab.
+- **`SHEET_CSV_URL` (sheet owners only).** Publish the sheet
+  (**File → Share → Publish to web → pick the tab → CSV**) and set the link.
+  Google serves it anonymously from anywhere. Note it can lag the live sheet by
+  a few minutes — fine for a 10-minute logging cadence.
+
+Also set **`TZ`** (e.g. `Africa/Lagos`) so the sheet's local `DATE`/`TIME` parse
+correctly on a UTC host.
 
 ## Data model
 

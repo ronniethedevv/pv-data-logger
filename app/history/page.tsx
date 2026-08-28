@@ -62,13 +62,13 @@ export default function HistoryPage() {
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
             <RangeSelector value={rangeMs} onChange={setRangeMs} />
             <button
               type="button"
               onClick={() => downloadCsv(filtered, `solar-readings-${rangeLabel(rangeMs)}.csv`)}
               disabled={filtered.length === 0}
-              className="rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="shrink-0 rounded-md border border-slate-200 px-3 py-1.5 text-sm text-slate-700 transition-colors hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Export CSV
             </button>

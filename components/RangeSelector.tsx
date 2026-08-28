@@ -14,7 +14,9 @@ export function RangeSelector({ value, onChange }: RangeSelectorProps) {
     <div
       role="group"
       aria-label="Chart time range"
-      className="inline-flex rounded-lg border border-slate-200 p-0.5"
+      // Full-width even columns on mobile so every option stays tappable;
+      // collapses to a compact inline pill from sm up.
+      className="grid w-full grid-cols-6 rounded-lg border border-slate-200 p-0.5 sm:inline-flex sm:w-auto"
     >
       {RANGES.map((r) => (
         <button
@@ -23,7 +25,7 @@ export function RangeSelector({ value, onChange }: RangeSelectorProps) {
           onClick={() => onChange(r.ms)}
           aria-pressed={value === r.ms}
           className={cn(
-            "rounded-md px-3 py-1.5 text-sm tabular-nums transition-colors",
+            "rounded-md px-2 py-1.5 text-sm tabular-nums transition-colors sm:px-3",
             value === r.ms
               ? "bg-slate-100 text-slate-900"
               : "text-slate-500 hover:text-slate-900"

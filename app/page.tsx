@@ -71,8 +71,9 @@ export default function DashboardPage() {
           />
         ) : (
           <div className="flex flex-col gap-6">
-            {/* Row 1 — Electrical metrics */}
-            <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {/* Row 1 — Electrical metrics. Two-up on mobile to cut scrolling;
+                the Panel Power hero still reads as primary via its fill/size. */}
+            <section className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
               <MetricCard
                 label="Panel Voltage"
                 value={live.panel.voltage}
@@ -104,8 +105,9 @@ export default function DashboardPage() {
               />
             </section>
 
-            {/* Row 2 — Environment */}
-            <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {/* Row 2 — Environment. Ambient holds two values side by side, so on
+                mobile it takes a full row below the two single-value cards. */}
+            <section className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
               <MetricCard
                 label="Panel Temperature"
                 value={live.environment.panelTemp}
@@ -117,11 +119,13 @@ export default function DashboardPage() {
                   (r) => r.environment.panelTemp
                 )}
               />
-              <EnvironmentCard
-                label="Ambient"
-                primary={{ value: live.environment.ambientTemp, unit: "°C", caption: "Temperature" }}
-                secondary={{ value: live.environment.humidity, unit: "%", caption: "Humidity" }}
-              />
+              <div className="order-last col-span-2 lg:order-none lg:col-span-1">
+                <EnvironmentCard
+                  label="Ambient"
+                  primary={{ value: live.environment.ambientTemp, unit: "°C", caption: "Temperature" }}
+                  secondary={{ value: live.environment.humidity, unit: "%", caption: "Humidity" }}
+                />
+              </div>
               <MetricCard
                 label="Irradiance"
                 value={live.environment.irradiance}
@@ -219,12 +223,12 @@ export default function DashboardPage() {
 function LoadingState() {
   return (
     <div className="flex flex-col gap-6">
-      <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <SkeletonCard key={i} />
         ))}
       </section>
-      <section className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      <section className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <SkeletonCard key={i} />
         ))}

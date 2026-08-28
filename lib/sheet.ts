@@ -33,10 +33,12 @@ const SHEET_RANGE = process.env.SHEET_RANGE?.trim() || "A:L";
 const PANEL_AREA_M2 = 0.06; // 6 W panel — used to derive efficiency
 
 // The sheet records DATE/TIME in the plant's local zone with no offset. On a UTC
-// host (Vercel) that would parse an hour or more off, and Vercel reserves `TZ`,
-// so set SHEET_TZ_OFFSET (e.g. "+01:00") to pin the zone. Empty = host-local.
+// host (Vercel) that parses an hour or more off, and Vercel reserves `TZ`, so
+// NEXT_PUBLIC_SHEET_TZ_OFFSET (e.g. "+01:00") pins the zone. It is the same var
+// the formatters in lib/utils.ts render with, so parse and display always agree.
+// Empty = host-local, which is right for local dev in the plant's own zone.
 const TZ_OFFSET = (() => {
-  const raw = process.env.SHEET_TZ_OFFSET?.trim();
+  const raw = (process.env.NEXT_PUBLIC_SHEET_TZ_OFFSET ?? process.env.SHEET_TZ_OFFSET)?.trim();
   return raw && /^([+-]\d{2}:\d{2}|Z)$/.test(raw) ? raw : "";
 })();
 

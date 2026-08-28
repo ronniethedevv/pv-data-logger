@@ -50,7 +50,7 @@ export default function SystemPage() {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
             {Array.from({ length: 3 }).map((_, i) => (
               <SkeletonCard key={i} />
             ))}
@@ -63,7 +63,7 @@ export default function SystemPage() {
         ) : (
           <div className="flex flex-col gap-6">
             {/* Logging summary */}
-            <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <section className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
               <MetricCard label="Data Points Today" value={pointsToday} unit="logged" precision={0} />
               <MetricCard
                 label="Refresh Interval"

@@ -23,10 +23,11 @@ export function PageHeader({ status, lastSyncMs }: PageHeaderProps) {
 
   return (
     <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex max-w-[1400px] items-center gap-8 px-8 py-4">
+      <div className="mx-auto flex max-w-[1400px] flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 md:gap-x-8 md:px-8 md:py-4">
         <span className="text-base font-semibold text-slate-900">Solar PV Data Logger</span>
 
-        <nav className="flex items-center gap-1">
+        {/* Wraps to its own full-width row on mobile; sits inline from md up. */}
+        <nav className="order-last flex w-full items-center gap-1 md:order-none md:w-auto">
           {NAV.map((item) => {
             const active =
               item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -47,10 +48,11 @@ export function PageHeader({ status, lastSyncMs }: PageHeaderProps) {
           })}
         </nav>
 
-        <div className="ml-auto flex items-center gap-4">
+        <div className="ml-auto flex shrink-0 items-center gap-3 md:gap-4">
           <StatusIndicator status={status} />
           <span className="text-sm tabular-nums text-slate-400">
-            Last sync: {formatClock(lastSyncMs)}
+            <span className="hidden sm:inline">Last sync: </span>
+            {formatClock(lastSyncMs)}
           </span>
         </div>
       </div>

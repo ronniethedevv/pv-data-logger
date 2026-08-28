@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn, formatClock } from "@/lib/utils";
+import { cn, formatClockWithDate } from "@/lib/utils";
 import type { ConnectionStatus } from "@/lib/readings";
 import { StatusIndicator } from "@/components/StatusIndicator";
 
@@ -52,7 +52,7 @@ export function PageHeader({ status, lastSyncMs }: PageHeaderProps) {
           <StatusIndicator status={status} />
           <span className="text-sm tabular-nums text-slate-400">
             <span className="hidden sm:inline">Last sync: </span>
-            {formatClock(lastSyncMs)}
+            {formatClockWithDate(lastSyncMs)}
           </span>
         </div>
       </div>

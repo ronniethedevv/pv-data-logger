@@ -1,20 +1,24 @@
 export type LiveReading = {
   timestamp: number; // Unix epoch ms, from DS3231
   panel: {
-    voltage: number; // V — INA226 @ 0x44 (main panel SC2)
-    current: number; // A — INA226 @ 0x44
-    power: number; // W — INA226 @ 0x44
+    voltage: number; // V — INA226 @ 0x40 (main panel)
+    current: number; // A — INA226 @ 0x40
+    power: number; // W — INA226 @ 0x40
   };
   environment: {
-    panelTemp: number; // °C — MAX6675 K-type thermocouple
+    panelTemp: number; // °C — DS18B20 on the panel
     ambientTemp: number; // °C — DHT22
     humidity: number; // % — DHT22
-    irradiance: number; // W/m² — derived from DuraVolt reference cell Isc
+    irradiance: number; // W/m² — from reference-cell Isc (INA226 @ 0x41),
+    // temperature-compensated by the firmware
   };
   efficiency: number; // % — panel power vs theoretical from irradiance
   system: {
-    wifiConnected: boolean;
-    sdCardActive: boolean;
+    /**
+     * Logger state for this row: "NORMAL", or "ISOLATED" when the firmware has
+     * briefly disconnected the charge controller to measure the panel unloaded.
+     */
+    mode: string;
     lastSyncMs: number;
   };
 };

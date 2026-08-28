@@ -63,8 +63,11 @@ async function fetchRows(): Promise<string[][]> {
     return (data.values ?? []).map((row) => row.map((c) => (c == null ? "" : String(c))));
   }
 
+  // Cache-buster: Google (and any CDN in front of it) will happily serve a stale
+  // copy of a published CSV otherwise. Harmless — the extra param is ignored.
   const url = csvUrl();
-  const res = await fetch(url, { cache: "no-store" });
+  const bustable = `${url}${url.includes("?") ? "&" : "?"}_cb=${Date.now()}`;
+  const res = await fetch(bustable, { cache: "no-store" });
   if (!res.ok) {
     throw new Error(`Sheet responded ${res.status}`);
   }
@@ -83,10 +86,11 @@ async function fetchRows(): Promise<string[][]> {
   return parseCsv(text);
 }
 
-// Server-side cache. The sheet only changes every ~10 min, so we read Google at
-// most once per window no matter how many viewers are polling — this decouples
-// Google/quota usage from the number of open tabs and keeps it comfortably free.
-const CACHE_MS = Number(process.env.SHEET_CACHE_MS ?? 60_000);
+// Server-side cache: one Google read per window no matter how many viewers are
+// polling, so quota usage stays flat as tabs are added. The firmware logs every
+// 60 s (LOG_INTERVAL), so this must stay well under that to avoid adding a whole
+// row of lag — 20 s is ~3 reads/min, still trivially inside the free quota.
+const CACHE_MS = Number(process.env.SHEET_CACHE_MS ?? 20_000);
 let cache: { at: number; readings: LiveReading[] } | null = null;
 
 /** Fetch and map the sheet to chronologically-sorted readings (cached). */
@@ -262,9 +266,6 @@ export function rowsToReadings(rows: string[][]): LiveReading[] {
     const theoretical = irradiance * PANEL_AREA_M2;
     const efficiency = theoretical > 0.05 ? Math.min(100, Math.max(0, (power / theoretical) * 100)) : 0;
 
-    const state = (r[col.state] ?? "").trim();
-    const healthy = !/fault|error|offline|disconnect/i.test(state);
-
     readings.push({
       timestamp: ts,
       panel: {
@@ -280,8 +281,7 @@ export function rowsToReadings(rows: string[][]): LiveReading[] {
       },
       efficiency: round(efficiency, 1),
       system: {
-        wifiConnected: healthy,
-        sdCardActive: healthy,
+        mode: (r[col.state] ?? "").trim() || "UNKNOWN",
         lastSyncMs: ts,
       },
     });

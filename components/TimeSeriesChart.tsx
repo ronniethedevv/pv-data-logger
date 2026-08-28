@@ -12,7 +12,7 @@ import {
   YAxis,
   type TooltipProps,
 } from "recharts";
-import { formatHm, formatMonthDayTime } from "@/lib/utils";
+import { formatHm, formatMonthDayTime, isSameDay } from "@/lib/utils";
 
 export type ChartPoint = { t: number } & Record<string, number>;
 
@@ -49,9 +49,14 @@ function withHeadroom(max: number): number {
   return max * 1.1;
 }
 
+/**
+ * Whether the window crosses a calendar day. Checked by date rather than by
+ * duration, since even a 12 h window straddling midnight needs dated labels to
+ * be unambiguous.
+ */
 function spansMultipleDays(data: ChartPoint[]): boolean {
   if (data.length < 2) return false;
-  return data[data.length - 1].t - data[0].t > 24 * 60 * 60 * 1000;
+  return !isSameDay(data[0].t, data[data.length - 1].t);
 }
 
 export function TimeSeriesChart({
@@ -64,7 +69,10 @@ export function TimeSeriesChart({
   showDots = false,
 }: TimeSeriesChartProps) {
   const multiDay = spansMultipleDays(data);
-  const xFormatter = (t: number) => (multiDay ? formatMonthDayTime(t) : formatHm(t));
+  // Axis ticks stay compact; the tooltip carries the date when the window
+  // crosses midnight, so a hovered point is never ambiguous about its day.
+  const xFormatter = (t: number) => formatHm(t);
+  const tooltipFormatter = (t: number) => (multiDay ? formatMonthDayTime(t) : formatHm(t));
 
   // Thin out markers so dense windows (e.g. 48 h) stay readable; always show
   // dots when there are only a handful of points.
@@ -77,7 +85,7 @@ export function TimeSeriesChart({
       series={series}
       unit={unit}
       precision={precision}
-      xFormatter={xFormatter}
+      xFormatter={tooltipFormatter}
     />
   );
 

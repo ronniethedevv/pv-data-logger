@@ -11,10 +11,19 @@
 import { useEffect, useState } from "react";
 import type { HistoricalReading, LiveReading } from "@/types/readings";
 
-// The logger writes every ~10 min, so polling fast buys nothing. 30 s keeps the
-// UI feeling live while staying light on Vercel invocations and Sheets quota
-// (the server also caches — see lib/sheet.ts).
-export const POLL_INTERVAL_MS = 30_000;
+// The firmware logs every 60 s (LOG_INTERVAL in the sketch), so poll well inside
+// that to catch each new row promptly. The server caches for 20 s, so this costs
+// no extra Google reads — it only decides how fast a cached row reaches the UI.
+export const POLL_INTERVAL_MS = 20_000;
+
+/** The firmware's logging cadence — used to judge whether data is still live. */
+export const LOG_INTERVAL_MS = 60_000;
+
+/**
+ * How stale the newest row may be before the logger is considered offline.
+ * Three missed writes, plus slack for the sheet's own propagation delay.
+ */
+export const STALE_AFTER_MS = 5 * LOG_INTERVAL_MS;
 
 export type ConnectionStatus = "connected" | "offline";
 
@@ -26,6 +35,14 @@ export type ReadingsState = {
   loading: boolean;
   error: string | null;
 };
+
+/** True when the reading is recent enough that the logger is still reporting. */
+export function isFresh(
+  reading: Pick<LiveReading, "timestamp"> | null,
+  now: number = Date.now()
+): boolean {
+  return reading != null && now - reading.timestamp <= STALE_AFTER_MS;
+}
 
 export function useReadings(): ReadingsState {
   const [state, setState] = useState<ReadingsState>({
@@ -56,7 +73,11 @@ export function useReadings(): ReadingsState {
         setState({
           live,
           history: readings,
-          status: live?.system.wifiConnected ? "connected" : "offline",
+          // The firmware never publishes a link state, and rows only reach the
+          // sheet over WiFi — so freshness of the newest row is the honest
+          // signal. A logger that stopped writing yesterday reads as offline
+          // instead of forever claiming "Connected".
+          status: isFresh(live) ? "connected" : "offline",
           lastSyncMs: live?.system.lastSyncMs ?? null,
           loading: false,
           error: null,

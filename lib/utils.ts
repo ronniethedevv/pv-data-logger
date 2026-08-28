@@ -73,3 +73,44 @@ export function formatMonthDayTime(ms: number): string {
   const f = fields(ms);
   return `${MONTHS[f.month]} ${pad(f.day)} ${pad(f.hour)}:${pad(f.minute)}`;
 }
+
+/** True when both instants fall on the same calendar day in the display zone. */
+export function isSameDay(a: number, b: number): boolean {
+  const x = fields(a);
+  const y = fields(b);
+  return x.day === y.day && x.month === y.month && yearOf(a) === yearOf(b);
+}
+
+function yearOf(ms: number): number {
+  if (OFFSET_MINUTES === null) return new Date(ms).getFullYear();
+  return new Date(ms + OFFSET_MINUTES * 60_000).getUTCFullYear();
+}
+
+/** Epoch ms of midnight for the day containing `ms`, in the display zone. */
+export function startOfDay(ms: number = Date.now()): number {
+  if (OFFSET_MINUTES === null) {
+    const d = new Date(ms);
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }
+  const shifted = ms + OFFSET_MINUTES * 60_000;
+  const midnightUtc = Math.floor(shifted / 86_400_000) * 86_400_000;
+  return midnightUtc - OFFSET_MINUTES * 60_000;
+}
+
+/**
+ * Clock time, prefixed with the date whenever the instant is not today.
+ *
+ * Without this a reading logged days ago reads as a plain time, which looks
+ * like it just arrived — the exact confusion when the rig has been powered off.
+ */
+export function formatClockWithDate(
+  ms: number | null | undefined,
+  now: number = Date.now()
+): string {
+  if (ms == null) return "--:--:--";
+  const clock = formatClock(ms);
+  if (isSameDay(ms, now)) return clock;
+  const f = fields(ms);
+  return `${MONTHS[f.month]} ${pad(f.day)} ${clock}`;
+}

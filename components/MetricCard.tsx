@@ -44,7 +44,7 @@ export function MetricCard({
           key={display}
           className={cn(
             "value-fade font-semibold tabular-nums text-slate-900",
-            isPrimary ? "text-4xl" : "text-3xl"
+            isPrimary ? "text-4xl sm:text-5xl" : "text-3xl"
           )}
         >
           {display}

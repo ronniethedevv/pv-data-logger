@@ -71,72 +71,41 @@ export default function DashboardPage() {
           />
         ) : (
           <div className="flex flex-col gap-6">
-            {/* Row 1 — Electrical metrics. Two-up on mobile to cut scrolling;
-                the Panel Power hero still reads as primary via its fill/size. */}
-            <section className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
-              <MetricCard
-                label="Panel Voltage"
-                value={live.panel.voltage}
-                unit="V"
-                precision={2}
-                trend={trendVsAverage(history, live.panel.voltage, (r) => r.panel.voltage)}
-              />
-              <MetricCard
-                label="Panel Current"
-                value={live.panel.current}
-                unit="A"
-                precision={3}
-                trend={trendVsAverage(history, live.panel.current, (r) => r.panel.current)}
-              />
-              <MetricCard
-                label="Panel Power"
-                value={live.panel.power}
-                unit="W"
-                precision={2}
-                variant="primary"
-                trend={trendVsAverage(history, live.panel.power, (r) => r.panel.power)}
-              />
-              <MetricCard
-                label="Efficiency"
-                value={live.efficiency}
-                unit="%"
-                precision={1}
-                trend={trendVsAverage(history, live.efficiency, (r) => r.efficiency)}
-              />
-            </section>
-
-            {/* Row 2 — Environment. Ambient holds two values side by side, so on
-                mobile it takes a full row below the two single-value cards. */}
-            <section className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
-              <MetricCard
-                label="Panel Temperature"
-                value={live.environment.panelTemp}
-                unit="°C"
-                precision={1}
-                trend={trendVsAverage(
-                  history,
-                  live.environment.panelTemp,
-                  (r) => r.environment.panelTemp
-                )}
-              />
-              <div className="order-last col-span-2 lg:order-none lg:col-span-1">
-                <EnvironmentCard
-                  label="Ambient"
-                  primary={{ value: live.environment.ambientTemp, unit: "°C", caption: "Temperature" }}
-                  secondary={{ value: live.environment.humidity, unit: "%", caption: "Humidity" }}
-                />
-              </div>
+            {/* Environment. Panel voltage/current/power and efficiency are no
+                longer surfaced (the data still flows through the layer untouched
+                — the UI just doesn't render them). Irradiance is the headline
+                metric: a full-width hero above panel + ambient temperature. */}
+            <section className="flex flex-col gap-4 sm:gap-6">
               <MetricCard
                 label="Irradiance"
                 value={live.environment.irradiance}
                 unit="W/m²"
                 precision={0}
+                variant="primary"
                 trend={trendVsAverage(
                   history,
                   live.environment.irradiance,
                   (r) => r.environment.irradiance
                 )}
               />
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
+                <MetricCard
+                  label="Panel Temperature"
+                  value={live.environment.panelTemp}
+                  unit="°C"
+                  precision={1}
+                  trend={trendVsAverage(
+                    history,
+                    live.environment.panelTemp,
+                    (r) => r.environment.panelTemp
+                  )}
+                />
+                <EnvironmentCard
+                  label="Ambient"
+                  primary={{ value: live.environment.ambientTemp, unit: "°C", caption: "Temperature" }}
+                  secondary={{ value: live.environment.humidity, unit: "%", caption: "Humidity" }}
+                />
+              </div>
             </section>
 
             {/* Chart range control (applies to all charts below) */}
@@ -223,15 +192,10 @@ export default function DashboardPage() {
 function LoadingState() {
   return (
     <div className="flex flex-col gap-6">
-      <section className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <SkeletonCard key={i} />
-        ))}
-      </section>
-      <section className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-3">
-        {Array.from({ length: 3 }).map((_, i) => (
-          <SkeletonCard key={i} />
-        ))}
+      <SkeletonCard />
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
+        <SkeletonCard />
+        <SkeletonCard />
       </section>
       <SkeletonChart height={300} />
       <SkeletonChart height={300} />

@@ -106,9 +106,11 @@ export async function fetchSheetReadings(): Promise<LiveReading[]> {
     // format or renamed headers. Fail loudly rather than returning an empty
     // array, which the UI cannot distinguish from "still loading".
     if (readings.length === 0 && rows.length > 1) {
+      const headerPreview = (rows[0] ?? []).slice(0, 3).join(" | ");
       const sample = [rows[1]?.[0], rows[1]?.[1]].filter(Boolean).join(" ");
       throw new Error(
-        `Fetched ${rows.length} rows but parsed 0 readings — check DATE/TIME columns (sample: "${sample}")`
+        `Fetched ${rows.length} rows but parsed 0 readings — check the sheet's ` +
+          `DATE/TIME columns (header starts: "${headerPreview}"; first data row: "${sample}")`
       );
     }
 
@@ -235,18 +237,26 @@ export function rowsToReadings(rows: string[][]): LiveReading[] {
   if (rows.length < 2) return [];
 
   const header = rows[0].map(normalizeHeader);
-  const at = (name: string) => header.indexOf(name);
+  // The logger writes columns in a fixed order, so match by header name but fall
+  // back to that order when a header is renamed or blanked in the sheet. This is
+  // what happened once when cell A1 "DATE" was overwritten with "m": name-only
+  // matching lost the date column and every row failed to parse. Position is the
+  // reliable key; the name match just tolerates harmless reordering.
+  const at = (name: string, fallback: number) => {
+    const i = header.indexOf(name);
+    return i >= 0 ? i : fallback;
+  };
   const col = {
-    date: at("DATE"),
-    time: at("TIME"),
-    state: at("STATE"),
-    ambient: at("AMBIENT TEMP"),
-    humidity: at("HUMIDITY"),
-    panelTemp: at("PANEL TEMP"),
-    irradiance: at("IRRIDANCE"),
-    pvVolt: at("MAIN PV VOLT"),
-    pvCurrent: at("MAIN PV CURRENT"),
-    pvPower: at("MAIN PV POWER"),
+    date: at("DATE", 0),
+    time: at("TIME", 1),
+    state: at("STATE", 2),
+    ambient: at("AMBIENT TEMP", 3),
+    humidity: at("HUMIDITY", 4),
+    panelTemp: at("PANEL TEMP", 5),
+    irradiance: at("IRRIDANCE", 8),
+    pvVolt: at("MAIN PV VOLT", 9),
+    pvCurrent: at("MAIN PV CURRENT", 10),
+    pvPower: at("MAIN PV POWER", 11),
   };
 
   const readings: LiveReading[] = [];
